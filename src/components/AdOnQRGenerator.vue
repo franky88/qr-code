@@ -5,145 +5,141 @@
                 <label for="reviewlink" class="form-label">Review link</label>
                 <input type="text" class="form-control" id="review-link">
             </div>
-            <div class="mb-3">
-                <label for="logoimage" class="form-label">Company logo</label>
-                <input type="file" class="form-control" id="logo-image" accept="image/png, image/jpeg">
+            <label for="logoimage" class="form-label">Company logo</label><br>
+            <div class="mb-3 input-group">
+                <input class="form-control" name="image" accept="image/png, image/jpeg" type="file" @change="handleImage">
+                <!-- <button class="btn btn-outline-secondary" type="button" id="inputGroupFileAddon04">Button</button> -->
             </div>
-            <form enctype="multipart/form-data" novalidate v-if="isInitial || isSaving">
-                <h1>Upload images</h1>
-                <div class="dropbox">
-                <input type="file" multiple :name="uploadFieldName" :disabled="isSaving" @change="filesChange($event.target.name, $event.target.files); fileCount = $event.target.files.length"
-                    accept="image/*" class="input-file">
-                    <p v-if="isInitial">
-                    Drag your file(s) here to begin<br> or click to browse
-                    </p>
-                    <p v-if="isSaving">
-                    Uploading {{ fileCount }} files...
-                    </p>
-                </div>
-            </form>
-            <button @click="generateQR()" class="btn btn-outline-primary">Generate QR</button>
+            <img id="output" :src="image" width="300" />
+            <img id="file" :src="remoteURL" :value="remoteURL" alt="">
+            <!-- <input id='inputfile' type='file' name='inputfile' @change='getFileNameWithExt(event)'>
+                <br>
+            Output Filename <input id='outputfile' type='text' name='outputfile'>
+                <br>
+            Extension <input id='extension' type='text' name='extension'> -->
+            <button @click="generateQR" class="btn btn-outline-primary">Generate QR</button>
         </div>
         <div class="col-sm-8">
-            <div id="qrcode" style="text-align: center;"></div>
-        </div>
-    </div>
-    <div class="row">
-        <div v-if="isSuccess">
-            <h2>Uploaded {{ uploadedFiles.length }} file(s) successfully.</h2>
-            <p>
-            <a href="javascript:void(0)" @click="reset()">Upload again</a>
-            </p>
-            <ul class="list-unstyled">
-            <li v-for="item in uploadedFiles" :key="item.id">
-                <img :src="item.url" class="img-responsive img-thumbnail" :alt="item.originalName">
-            </li>
-            </ul>
-        </div>
-        <!--FAILED-->
-        <div v-if="isFailed">
-            <h2>Uploaded failed.</h2>
-            <p>
-            <a href="javascript:void(0)" @click="reset()">Try again</a>
-            </p>
-            <pre>{{ uploadError }}</pre>
+            <div id="qrcode" style="text-align: center;">
+                
+            </div>
+            <!-- <div id="example">
+                <p>Original message: "{{ message }}"</p>
+                <p>Computed reversed message: "{{ reversedMessage }}"</p>
+            </div> -->
         </div>
     </div>
 </template>
 <script>
 import * as QRCode from 'easyqrcodejs'
+import axios from 'axios'
 // import { upload } from '../file-upload-service'
-import { upload } from '../fake-file-upload-service'
-
-const STATUS_INITIAL = 0, STATUS_SAVING = 1, STATUS_SUCCESS = 2, STATUS_FAILED = 3;
+// import { upload } from '../fake-file-upload-service'
 
 export default {
   name: 'QR generator',
   data(){
       return {
-        uploadedFiles: [],
-        uploadError: null,
-        currentStatus: null,
-        uploadFieldName: 'photos'
+        // message: 'Hello',
+        image: '',
+        remoteURL: ''
       }
   },
-  computed: {
-      isInitial() {
-        return this.currentStatus === STATUS_INITIAL;
-      },
-      isSaving() {
-        return this.currentStatus === STATUS_SAVING;
-      },
-      isSuccess() {
-        return this.currentStatus === STATUS_SUCCESS;
-      },
-      isFailed() {
-        return this.currentStatus === STATUS_FAILED;
-      }
+  methods: {
+    handleImage(e){
+        const selectedImage = e.target.files[0];
+        this.createBase64Image(selectedImage);
     },
-    methods: {
-        reset() {
-        // reset form to initial state
-            this.currentStatus = STATUS_INITIAL;
-            this.uploadedFiles = [];
-            this.uploadError = null;
-        },
-        save(formData) {
-            // upload data to the server
-            this.currentStatus = STATUS_SAVING;
-
-            upload(formData)
-                .then(x => {
-                    this.uploadedFiles = [].concat(x);
-                    this.currentStatus = STATUS_SUCCESS;
-                })
-                .catch(err => {
-                    this.uploadError = err.response;
-                    this.currentStatus = STATUS_FAILED;
-                });
-        },
-        filesChange(fieldName, fileList) {
-            // handle file changes
-            const formData = new FormData();
-
-            if (!fileList.length) return;
-
-            // append the files to FormData
-            Array
-                .from(Array(fileList.length).keys())
-                .map(x => {
-                formData.append(fieldName, fileList[x], fileList[x].name);
-                });
-
-            // save it
-            this.save(formData);
-        },
-        generateQR(){
-            const BASE_URL = "http://localhost:8080"
-            const output = document.getElementById("qrcode");
-            const rLink = document.getElementById("review-link").value;
-            const img = document.getElementById('logo-image').value;
-            const imgUrl = `${BASE_URL}/photo/upload/${img}`
-            console.log(imgUrl);
-            console.log(rLink);
-            var options = {
-                text: rLink,
-                width: 256,
-                height: 256,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                logo: imgUrl,
-                logoWidth: undefined,
-                logoHeight: undefined,
-                logoBackgroundTransparent: true,
-                logoBackgroundColor: "#ffffff",
-            }
-            new QRCode(output, options)
+    createBase64Image(fileObject){
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            this.image = e.target.result;
+            this.uploadImage();
+        };
+        reader.readAsDataURL(fileObject);
+    },
+    uploadImage(){
+        const {image} = this;
+        axios.post('http://localhost:8080/', {image})
+        .then((response)=>{
+            this.remoteURL = response.data.url;
+        })
+        .catch((err)=>{
+            return new Error(err.message)
+        })
+    },
+    generateQR(){
+        // const BASE_URL = "http://127.0.0.1:8080/easy-qrcodejs/demo"
+        const output = document.getElementById("qrcode");
+        const rLink = document.getElementById("review-link").value;
+        const img = this.remoteURL;
+        console.log(img)
+        // const imgUrl = `${BASE_URL}/${img}`
+        // console.log(imgUrl);
+        console.log(rLink);
+        var options = {
+            text: rLink,
+            width: 256,
+            height: 256,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H,
+            drawer: 'svg',
+            dotScale: 1,
+            logo: img,
+            logoWidth: undefined,
+            logoHeight: undefined,
+            logoBackgroundTransparent: true,
+            logoBackgroundColor: "#ffffff",
         }
+        new QRCode(output, options)
     },
-    mounted() {
-      this.reset();
-    },
+    // getFileNameWithExt(event) {
+    //     if (!event || !event.target || !event.target.files || event.target.files.length === 0) {
+    //         return;
+    //     }
+    //     const outputfile = document.getElementById('outputfile')
+    //     const extension = document.getElementById('extension')
+    //     const name = event.target.files[0].name;
+    //     const lastDot = name.lastIndexOf('.');
+    //     const fileName = name.substring(0, lastDot);
+    //     const ext = name.substring(lastDot + 1);
+    //     outputfile.value = fileName;
+    //     extension.value = ext;
+    //     console.log(fileName);
+    //     console.log(ext);
+    // },
+    // imageUpload(event) {
+    //     var image = document.getElementById('output');
+	// 	image.src = URL.createObjectURL(event.target.files[0]);
+    // }
+  },
+  computed: {
+    // getFileNameWithExt: function(event) {
+    //     if (!event || !event.target || !event.target.files || event.target.files.length === 0) {
+    //         return;
+    //     }
+    //     const outputfile = document.getElementById('outputfile')
+    //     const extension = document.getElementById('extension')
+    //     const name = event.target.files[0].name;
+    //     const lastDot = name.lastIndexOf('.');
+    //     const fileName = name.substring(0, lastDot);
+    //     const ext = name.substring(lastDot + 1);
+    //     outputfile.value = fileName;
+    //     extension.value = ext;
+    //     console.log(fileName);
+    //     console.log(ext);
+    // }
+    // // a computed getter
+    // reversedMessage: function () {
+    //   // `this` points to the vm instance
+    //   return this.message.split('').reverse().join('')
+    // },
+    // imageUpload: function(event) {
+    //     var image = document.getElementById('output');
+	// 	image.src = URL.createObjectURL(event.target.files[0]);
+    // }
+  }
 }
 </script>
 <style scoped>
