@@ -1,15 +1,18 @@
-function getFileNameWithExt(event) {
-    if (!event || !event.target || !event.target.files || event.target.files.length === 0) {
-        return;
-    }
-    // const outputfile = document.getElementById('outputfile')
-    // const extension = document.getElementById('extension')
-    const name = event.target.files[0].name;
-    const lastDot = name.lastIndexOf('.');
-    const fileName = name.substring(0, lastDot);
-    const ext = name.substring(lastDot + 1);
-    outputfile.value = fileName;
-    extension.value = ext;
-    console.log(fileName);
-    console.log(ext);
+const btnUpload = document.getElementById('btnUpload');
+const myCanvas = document.getElementById('myCanvas');
+const ctx = myCanvas.getContext("2d");
+
+ctx.fillStyle = "#ccc";
+ctx.rect(0,0,myCanvas.width, myCanvas.height);
+ctx.fill();
+
+ctx.fillStyle = "blue";
+ctx.font = "35px serif";
+ctx.fillText("dcode base64", 30, 60);
+
+btnUpload.addEventListener('click', uploadCanvasImage);
+
+function uploadCanvasImage(){
+    const base64 = myCanvas.toDataURL();
+    console.log(base64)
 }
