@@ -1,102 +1,146 @@
 <template>
     <div class="row">
         <div class="col-sm-4">
+          <div class="card card-body">
+            <h4 class="card-title">AOR QR Generator</h4>
+            <div class="mb-3">
+                <label for="businessName" class="form-label">Business Name</label>
+                <input v-model="busName" type="text" class="form-control form-control-sm" id="businessName">
+            </div>
             <div class="mb-3">
                 <label for="reviewlink" class="form-label">Review link</label>
-                <input type="text" class="form-control" id="review-link">
+                <input type="url" class="form-control form-control-sm" id="review-link">
+            </div>
+            <div class="input-group input-group-sm mb-3">
+              <label class="input-group-text" for="inputGroupSelect01">Review type</label>
+              <select v-model="reviewFor" class="form-select" id="reviewfor">
+                <option value="Google" selected>Google</option>
+                <option value="Google or Facebook">Google or Facebook</option>
+                <option value="Facebook">Facebook</option>
+              </select>
             </div>
             <label for="logoimage" class="form-label">Company logo</label><br>
             <div class="mb-3 input-group">
-                <input class="form-control" type="file" name="image" accept="image/png, image/jpeg" @change="getImageBase64">
-                <button class="btn btn-outline-secondary" type="button" id="btnUpload" @click="uploadImage">Upload</button>
+                <input class="form-control form-control-sm" type="file" name="image" accept="image/png, image/jpeg" @change="getImageBase64">
             </div>
-            <canvas id="imageCanvas" width="150" height="150">
-            </canvas><br>
-            <h5>{{imageName}}</h5>
-            <img id="output"/>
-            <a :href="image">View Image</a>
+            <div v-show="image.src" class="card mb-3" style="max-width: 540px;">
+              <div class="row g-0">
+                <div class="col-md-4">
+                  <img class="align-self-center" id="output" :src="image.src" :alt="imageName">
+                </div>
+                <div class="col-md-8">
+                  <div class="card-body">
+                    <p class="card-title">{{imageName}}</p>
+                    <p class="card-text"><small class="text-muted">File size: {{imageSize}} KB</small></p>
+                    <a :href="image.src" target="_blank"><small class="text-muted">View Image</small></a>
+                  </div>
+                </div>
+              </div>
+            </div>
             <button @click="generateQR" class="btn btn-outline-primary">Generate QR</button>
-            <!-- <button @click="clearQRCode" class="btn btn-outline-danger">Resets QR</button> -->
+          </div>
         </div>
-        <div class="col-sm-8">
-            <p>{{ imageBase64 }}</p>
-            <div id="qrcode" style="text-align: center;">
+        <div class="col-sm-8" style="text-align: center;">
+          <div class="card">
+            <div class="card-body">
+              <h1 class="card-title">{{ busName }}</h1>
+              <h4>values your feedback.</h4>
+              <br>
+              <div id="qrcode" style="text-align: center;">
+              </div>
+              <br>
+              <br>
+              <h5>Please scan above to leave us a
+  <br> review on {{reviewFor}}!</h5>
+              <br>
             </div>
+          </div>
         </div>
     </div>
 </template>
 <script>
 import * as QRCode from 'easyqrcodejs'
-// import axios from 'axios'
-// import { upload } from '../file-upload-service'
-// import { upload } from '../fake-file-upload-service'
+
 export default {
   name: 'QR generator',
   data(){
       return {
-        // isShow: false,
+        isShow: false,
         qrWidth: 300,
         qrHeight: 300,
         imageName: '',
+        imageSize: '',
         image: '',
         imageBase64: '',
-        canvas: '',
         generatedQRCode: '',
-        vueCanvas: ''
+        busName: 'AdOn Group',
+        reviewFor: 'Google'
+        // vueCanvas: '',
+        // canvas: '',
       }
   },
   mounted () {
+    const revFor = document.getElementById('reviewfor').value;
+    this.reviewFor = revFor;
+    //Business name
+    const businessName = document.getElementById('businessName').value;
+    this.busName = businessName;
     //generated QR output
     const qrcode = document.getElementById("qrcode");
     this.generatedQRCode = qrcode;
+    let opt = {
+      text: 'https://getbootstrap.com/docs/4.0/utilities/flex/'
+    }
+    new QRCode(this.generatedQRCode, opt)
     //image upload
     const img = document.getElementById('output');
     this.image = img
     //canvas
-    var c = document.getElementById("imageCanvas");
-    this.canvas = c;
-    var ctx = c.getContext("2d");
+    // const c = document.getElementById("imageCanvas");
+    // this.canvas = c;
+    // const ctx = c.getContext("2d");
+    // let cw = this.canvas.width;
+    // let ch = this.canvas.height;
     // this.canvas.width = this.image.width;
     // this.canvas.height = this.image.height;
-    ctx.fillStyle = "#fff";
+    // ctx.fillStyle = "#fff";
     // ctx.strokeRect(0, 0, c.width, c.height);
 
     // ctx.fillStyle = "#222";
     // ctx.font = "20px serif";
     // ctx.fillText("LOGO", 25, 55);
 
-    this.vueCanvas = ctx;
+    // this.vueCanvas = ctx;
   },
   methods: {
     getImageBase64(event){
-        var file = event.target.files[0];
-        var reader = new FileReader();
+        let file = event.target.files[0];
+        let reader = new FileReader();
         reader.onloadend = function() {
             // console.log('RESULT', reader.result)
-            // const samp = reader.result
-            // const b64 = samp.toDataURL();
-            // console.log(samp)
             this.imageBase64 = reader.result
-            console.log(this.imageBase64)
+            console.log("Base64 "+this.imageBase64)
         }
         reader.readAsDataURL(file);
-        this.imageName = file.name
+        this.imageName = file.name;
+        let roundOffSize = Math.round((file.size*0.001)*100)/100;
+        this.imageSize = roundOffSize;
         this.image.src = URL.createObjectURL(event.target.files[0]);
     },
-    loadFile(event){
-        this.image.src = URL.createObjectURL(event.target.files[0]);
-    },
+    // loadFile(event){
+    //     this.image.src = URL.createObjectURL(event.target.files[0]);
+    // },
     // uploadImage(){
     //     // console.log("image source height "+ this.image.height)
     //     // console.log("canvas height "+ this.canvas.height)
-    //     // const toCenterH = (this.canvas.height - this.image.height)/2;
-    //     // const toCenterW = (this.canvas.width - this.image.width)/2;
-    //     // this.vueCanvas.drawImage(this.image,toCenterW,toCenterH,this.image.width,this.image.height);
-    //     // this.base64Image = this.canvas.toDataURL();
+    //     let toCenterH = (this.canvas.height - this.image.height)/2;
+    //     let toCenterW = (this.canvas.width - this.image.width)/2;
+    //     this.vueCanvas.drawImage(this.image,toCenterW,toCenterH,this.image.width,this.image.height);
+    //     this.imageBase64 = this.canvas.toDataURL();
     // },
     generateQR(){
         const rLink = document.getElementById("review-link").value;
-        var options = {
+        let options = {
             text: rLink,
             width: this.qrWidth,
             height: this.qrHeight,
@@ -105,7 +149,7 @@ export default {
             correctLevel : QRCode.CorrectLevel.H,
             drawer: 'svg',
             dotScale: 1,
-            logo: this.imageBase64,
+            logo: this.image.src,
             logoWidth: this.image.width,
             logoHeight: this.image.height,
             logoBackgroundTransparent: false,
@@ -146,7 +190,8 @@ export default {
     padding: 50px 0;
   }
   #output{
-      width: auto;
-      height: 100px;
+      width: 100%;
+      height: auto;
+      padding: 10px;
   }
 </style>
