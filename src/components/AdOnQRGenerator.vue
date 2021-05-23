@@ -66,8 +66,8 @@ export default {
   data(){
       return {
         isShow: false,
-        qrWidth: 300,
-        qrHeight: 300,
+        qrWidth: 350,
+        qrHeight: 350,
         imageName: '',
         imageSize: '',
         image: '',
@@ -89,7 +89,9 @@ export default {
     const qrcode = document.getElementById("qrcode");
     this.generatedQRCode = qrcode;
     let opt = {
-      text: 'https://getbootstrap.com/docs/4.0/utilities/flex/'
+      text: 'https://adongroup.com.au',
+      width: this.qrWidth,
+      height: this.qrHeight,
     }
     new QRCode(this.generatedQRCode, opt)
     //image upload
